@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Zyphor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="intro">
+  <img src="images/logo.png" class="logo">
+  <p class="desc">
+    Zyphor é uma IA de assistência criada para ajudar no dia a dia...
+  </p>
+  <button id="startBtn">INICIAR</button>
+</div>
+
+<div id="chat" style="display:none;">
+  
+  <div class="face-container">
+    <img id="face" src="images/face_neutral.png">
+    <img id="mouth" src="images/mouth_closed.png">
+  </div>
+
+  <input type="text" id="input" placeholder="Digite...">
+
+  <!-- 🔥 RESPOSTA DA IA AQUI -->
+  <div id="resposta" class="resposta"></div>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
