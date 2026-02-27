@@ -6,20 +6,32 @@ const face = document.getElementById("face");
 const mouth = document.getElementById("mouth");
 const respostaDiv = document.getElementById("resposta");
 
-startBtn.onclick = () => {
+/* ================= SEGURANÇA DE DOM ================= */
+
+if (!startBtn || !intro || !chat || !input || !face || !mouth || !respostaDiv) {
+  console.error("Erro: algum elemento do DOM não foi encontrado");
+}
+
+/* ================= INICIAR ================= */
+
+startBtn.addEventListener("click", () => {
   intro.style.display = "none";
   chat.style.display = "flex";
-};
+});
 
-// Piscar a cada 4 segundos
+/* ================= PISCAR ================= */
+
 setInterval(() => {
+  if (!face) return;
+
   face.src = "images/face_blink.png";
   setTimeout(() => {
     face.src = "images/face_neutral.png";
   }, 400);
 }, 4000);
 
-// Perguntas fixas
+/* ================= RESPOSTAS FIXAS ================= */
+
 function respostaFixa(pergunta) {
   pergunta = pergunta.toLowerCase();
 
@@ -47,59 +59,60 @@ function respostaFixa(pergunta) {
   return null;
 }
 
-input.addEventListener("keypress", async function(e) {
-  if (e.key === "Enter") {
+/* ================= INPUT ================= */
 
-    const pergunta = input.value.trim();
-    if (!pergunta) return;
+input.addEventListener("keydown", async (e) => {
+  if (e.key !== "Enter") return;
 
+  const pergunta = input.value.trim();
+  if (!pergunta) return;
+
+  let resposta = "";
+  let emocao = "neutral";
+
+  try {
     const fixa = respostaFixa(pergunta);
 
-    let resposta;
-    let emocao = "neutral";
+    if (fixa) {
+      resposta = fixa[0];
+      emocao = fixa[1];
+    } else {
+      const r = await fetch("/.netlify/functions/zyphor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pergunta })
+      });
 
-    try {
-      if (fixa) {
-        resposta = fixa[0];
-        emocao = fixa[1];
-      } else {
-
-        const r = await fetch("/.netlify/functions/zyphor", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ pergunta })
-        });
-
-        const data = await r.json();
-
-        if (data.erro) {
-          resposta = "Erro: " + data.erro;
-          emocao = "angry";
-        } else {
-          resposta = data.resposta;
-        }
+      if (!r.ok) {
+        throw new Error("API não respondeu");
       }
 
-    } catch (err) {
-      resposta = "Erro de conexão com Zyphor...";
-      emocao = "angry";
+      const data = await r.json();
+      console.log("Resposta da API:", data);
+
+      resposta = data?.resposta ?? "Zyphor não respondeu.";
+      emocao = data?.emocao ?? "neutral";
     }
-
-    // Mostrar resposta na tela
-    respostaDiv.innerText = resposta;
-    respostaDiv.style.color = "white";
-
-    // Animações
-    animarBoca();
-    mudarExpressao(emocao);
-
-    input.value = "";
+  } catch (err) {
+    console.error(err);
+    resposta = "Erro de conexão com Zyphor...";
+    emocao = "angry";
   }
+
+  respostaDiv.innerText = resposta;
+  respostaDiv.style.color = "white";
+
+  animarBoca();
+  mudarExpressao(emocao);
+
+  input.value = "";
 });
 
+/* ================= ANIMAÇÕES ================= */
+
 function animarBoca() {
+  if (!mouth) return;
+
   let i = 0;
   const anim = setInterval(() => {
     mouth.src = i % 2 === 0
@@ -112,5 +125,13 @@ function animarBoca() {
 }
 
 function mudarExpressao(tipo) {
-  face.src = "images/face_" + tipo + ".png";
+  if (!face) return;
+
+  const img = "images/face_" + tipo + ".png";
+
+  face.onerror = () => {
+    face.src = "images/face_neutral.png";
+  };
+
+  face.src = img;
 }
